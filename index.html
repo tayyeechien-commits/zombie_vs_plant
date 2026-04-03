@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PvZ RBT: Smooth Gameplay Edition</title>
+    <style>
+        :root {
+            --pvz-green-1: #45a049;
+            --pvz-green-2: #4caf50;
+            --font-main: 'Arial Black', sans-serif;
+            --super-bullet-color: #7efc00;
+        }
+
+        body {
+            margin: 0; padding: 0; background: #1a1a1a;
+            font-family: var(--font-main);
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+        }
+
+        #game-container {
+            width: 1100px; height: 650px;
+            background: repeating-conic-gradient(var(--pvz-green-1) 0% 25%, var(--pvz-green-2) 0% 50%) 50% / 120px 120px;
+            border: 10px solid #2e7d32; border-radius: 15px;
+            position: relative; box-shadow: 0 0 100px rgba(0,0,0,0.8);
+            overflow: hidden; 
+        }
+
+        #start-screen {
+            background: rgba(0,0,0,0.9) url('https://www.transparenttextures.com/patterns/dark-wood.png');
+            padding: 80px; border: 8px solid #8d6e63; border-radius: 40px;
+            text-align: center; color: #fff; cursor: pointer; z-index: 3000;
+        }
+
+        #level-banner {
+            position: absolute; width: 100%; top: 40%; text-align: center;
+            font-size: 4.5rem; color: #ffeb3b; text-shadow: 6px 6px 0 #bf360c;
+            z-index: 500; display: none; pointer-events: none;
+            background: rgba(0,0,0,0.7); padding: 20px 0;
+        }
+
+        .battle-field { display: flex; flex-direction: column; height: 100%; }
+        .lane { flex: 1; position: relative; width: 100%; display: flex; align-items: center; border-bottom: 2px solid rgba(0,0,0,0.1); }
+
+        .plant, .sunflower {
+            width: 120px; height: 120px;
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            z-index: 5; margin-right: 20px; transition: transform 0.2s;
+        }
+
+        .sunflower { 
+            background-image: url('sunflower.gif'); 
+            animation: sunflowerGlow 3s infinite ease-in-out, plantBreath 1.2s infinite ease-in-out;
+        }
+
+        @keyframes sunflowerGlow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; filter: brightness(1.2); } }
+        @keyframes plantBreath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        .plant { position: relative; animation: plantBreath 1.2s infinite ease-in-out; }
+
+        .zombie-container {
+            position: absolute; left: 1100px; width: 180px; height: 220px;
+            z-index: 20; cursor: crosshair; display: flex; justify-content: center; align-items: center;
+            transition: transform 0.1s;
+        }
+
+        .zombie-container:hover { transform: scale(1.05); }
+
+        .zombie-body {
+            width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat;
+            background-position: center bottom; animation: zombieWobble 2.5s infinite ease-in-out;
+            filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.3));
+        }
+
+        @keyframes zombieWobble { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+        @keyframes moveLeft { from { left: 1050px; } to { left: 420px; } }
+        .walking { animation: moveLeft 15s linear forwards; }
+
+        #main-bullet {
+            position: absolute; width: 45px; height: 45px;
+            background: radial-gradient(circle at 35% 35%, #fff 5%, var(--super-bullet-color) 40%, #4a7c00 90%);
+            border-radius: 50%; box-shadow: 0 0 30px var(--super-bullet-color);
+            z-index: 100; display: none; pointer-events: none;
+        }
+
+        #point-display {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #fff; color: #222; padding: 50px; border-radius: 30px;
+            font-size: 2.2rem; font-weight: bold; border: 10px solid #4caf50;
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.85);
+            display: none; z-index: 2000; text-align: center; width: 80%; cursor: pointer;
+        }
+
+        .defense-line { display: flex; margin-left: 30px; align-items: center; }
+    </style>
+</head>
+<body>
+
+<audio id="audio-bgm" src="bgm.mp3" loop></audio>
+<audio id="audio-click" src="click.mp3"></audio>
+<audio id="audio-shoot" src="shoot.mp3"></audio>
+<audio id="audio-point" src="point.mp3"></audio>
+<audio id="audio-nextlevel" src="nextlevel.mp3"></audio>
+
+<div id="start-screen" onclick="startGame()">
+    <h1 style="font-size: 3.5rem; color: #cddc39; margin: 0;">PLANTS VS ZOMBIES</h1>
+    <p style="font-size: 1.5rem; color: #ffeb3b;">5.2.6: Membentangkan Produk Elektromekanikal Yang Dihasilkan!</p>
+    <div style="margin-top: 30px; border: 3px solid #fff; padding: 15px; display: inline-block; border-radius: 10px;">MULA PERMAINAN</div>
+</div>
+
+<div id="game-container">
+    <div id="level-banner">LEVEL 1</div>
+    <div id="point-display" onclick="dismissPoint()">
+        <div id="point-text"></div>
+        <div style="font-size: 1.2rem; color: #666; margin-top: 30px;">(Klik mana-mana untuk sambung)</div>
+    </div>
+    <div id="main-bullet"></div>
+    <div class="battle-field">
+        <div class="lane" id="lane-0"><div class="defense-line"><div class="plant"></div><div class="sunflower"></div><div class="plant"></div></div></div>
+        <div class="lane" id="lane-1"><div class="defense-line"><div class="plant" id="shooter-plant"></div><div class="sunflower"></div><div class="plant"></div></div></div>
+        <div class="lane" id="lane-2"><div class="defense-line"><div class="plant"></div><div class="sunflower"></div><div class="plant"></div></div></div>
+    </div>
+</div>
+
+<script>
+    const content = [
+        { level: "ROUND 1: Definisi Pembentangan", points: ["Proses berkongsi maklumat tentang projek/produk.", "Untuk menyampaikan idea kepada audiens.", "Mendapatkan maklum balas untuk penambahbaikan.", "Menunjukkan bukti hasil kerja yang telah siap."] },
+        { level: "ROUND 2: Ciri Pembentangan Baik", points: ["Suara yang jelas and lantang.", "Isi ringkas, padat and lengkap.", "Sopan and berkeyakinan tinggi.", "Tepat masa (tidak terlalu lama).", "Penyampaian teratur and kemas.", "Berinteraksi dengan audiens."] },
+        { level: "ROUND 3: Keperluan Pembentangan", points: ["Nama ahli kumpulan & tajuk projek.", "Fungsi produk & komponen utama.", "Alatan & bahan yang digunakan.", "Demonstrasi kefungsian produk.", "Menjelaskan masalah yang dihadapi.", "Sesi soal jawab bersama audiens."] }
+    ];
+
+    let currentRound = 0, killedInRound = 0, isPaused = false;
+
+    const sndBgm = document.getElementById('audio-bgm');
+    const sndClick = document.getElementById('audio-click');
+    const sndShoot = document.getElementById('audio-shoot');
+    const sndPoint = document.getElementById('audio-point');
+    const sndNextLevel = document.getElementById('audio-nextlevel');
+
+    function assignPlantSkins() {
+        document.querySelectorAll('.plant').forEach(p => {
+            p.style.backgroundImage = `url('plant${Math.floor(Math.random() * 3) + 1}.gif')`;
+        });
+    }
+
+    function startGame() {
+        sndClick.currentTime = 0;
+        sndClick.play();
+        
+        setTimeout(() => {
+            sndBgm.play();
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            assignPlantSkins();
+            startLevel();
+        }, 100);
+    }
+
+    async function startLevel() {
+        if (currentRound >= content.length) {
+            alert("TAHNIAH! Anda telah tamat pelajaran hari ini!");
+            location.reload();
+            return;
+        }
+        const banner = document.getElementById('level-banner');
+        banner.innerText = content[currentRound].level;
+        banner.style.display = 'block';
+        await sleep(2500);
+        banner.style.display = 'none';
+        killedInRound = 0;
+        spawnZombies();
+    }
+
+    function spawnZombies() {
+        document.querySelectorAll('.zombie-container').forEach(z => z.remove());
+        const roundPoints = content[currentRound].points;
+        
+        roundPoints.forEach((text, index) => {
+            const container = document.createElement('div');
+            container.className = 'zombie-container walking';
+            const body = document.createElement('div');
+            body.className = 'zombie-body';
+            body.style.backgroundImage = `url('zombie${Math.floor(Math.random() * 6) + 1}.gif')`;
+            container.appendChild(body);
+            const laneId = index % 3;
+            document.getElementById('lane-' + laneId).appendChild(container);
+            container.style.left = (1050 + (index * 140)) + "px";
+            container.onclick = (e) => {
+                e.stopPropagation();
+                if (!isPaused) shootZombie(container, text);
+            };
+        });
+    }
+
+    function shootZombie(zombieContainer, text) {
+        isPaused = true;
+        sndShoot.currentTime = 0; 
+        sndShoot.play();
+        document.querySelectorAll('.zombie-container').forEach(el => el.style.animationPlayState = 'paused');
+        
+        const shooter = document.getElementById('shooter-plant'), bullet = document.getElementById('main-bullet');
+        const sRect = shooter.getBoundingClientRect(), zRect = zombieContainer.getBoundingClientRect(), cRect = document.getElementById('game-container').getBoundingClientRect();
+        
+        bullet.style.display = 'block';
+        bullet.animate([
+            { top: (sRect.top - cRect.top + 40) + 'px', left: (sRect.left - cRect.left + 60) + 'px', transform: 'scale(0.5)' },
+            { top: (zRect.top - cRect.top + 80) + 'px', left: (zRect.left - cRect.left + 80) + 'px', transform: 'scale(1.2)' }
+        ], { duration: 300, easing: 'ease-out' }).onfinish = () => {
+            bullet.style.display = 'none';
+            zombieContainer.style.opacity = '0';
+            setTimeout(() => zombieContainer.remove(), 100);
+            
+            setTimeout(() => {
+                sndPoint.currentTime = 0;
+                sndPoint.play();
+                showPoint(text);
+            }, 1500);
+        };
+    }
+
+    function showPoint(text) {
+        document.getElementById('point-text').innerText = text;
+        document.getElementById('point-display').style.display = 'block';
+    }
+
+    function dismissPoint() {
+        document.getElementById('point-display').style.display = 'none';
+        isPaused = false;
+        document.querySelectorAll('.zombie-container').forEach(el => el.style.animationPlayState = 'running');
+        
+        killedInRound++;
+        if (killedInRound >= content[currentRound].points.length) {
+            currentRound++;
+            // 在进入下一关前播放 Next Level 音效
+            if (currentRound < content.length) {
+                sndNextLevel.currentTime = 0;
+                sndNextLevel.play();
+            }
+            setTimeout(startLevel, 800);
+        }
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+
+</body>
+</html>
