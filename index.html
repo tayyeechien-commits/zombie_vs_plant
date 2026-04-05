@@ -10,43 +10,70 @@
             --pvz-green-2: #4caf50;
             --font-main: 'Arial Black', sans-serif;
             --super-bullet-color: #7efc00;
+            --game-scale: 1;
         }
 
         body {
-            margin: 0; padding: 0; background: #1a1a1a;
+            margin: 0; padding: 16px; background: #1a1a1a;
             font-family: var(--font-main);
             display: flex; justify-content: center; align-items: center;
-            height: 100vh; overflow: hidden;
+            min-height: 100vh; min-height: 100dvh; overflow: hidden;
+            box-sizing: border-box;
         }
 
         #game-container {
             width: 1100px; height: 650px;
-            background: repeating-conic-gradient(var(--pvz-green-1) 0% 25%, var(--pvz-green-2) 0% 50%) 50% / 120px 120px;
-            border: 10px solid #2e7d32; border-radius: 15px;
+            background: repeating-conic-gradient(var(--pvz-green-1) 0% 25%, var(--pvz-green-2) 0% 50%) 50% / calc(120px * var(--game-scale)) calc(120px * var(--game-scale));
+            border: calc(10px * var(--game-scale)) solid #2e7d32; border-radius: calc(15px * var(--game-scale));
             position: relative; box-shadow: 0 0 100px rgba(0,0,0,0.8);
-            overflow: hidden; 
+            overflow: hidden;
+            box-sizing: border-box;
         }
 
         #start-screen {
+            position: absolute; inset: 0;
             background: rgba(0,0,0,0.9) url('https://www.transparenttextures.com/patterns/dark-wood.png');
-            padding: 80px; border: 8px solid #8d6e63; border-radius: 40px;
+            padding: calc(80px * var(--game-scale)); border: calc(8px * var(--game-scale)) solid #8d6e63; border-radius: calc(40px * var(--game-scale));
             text-align: center; color: #fff; cursor: pointer; z-index: 3000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-sizing: border-box;
+        }
+
+        #start-screen h1 {
+            font-size: calc(3.5rem * var(--game-scale));
+            color: #cddc39;
+            margin: 0;
+        }
+
+        #start-screen p {
+            font-size: calc(1.5rem * var(--game-scale));
+            color: #ffeb3b;
+            margin: calc(24px * var(--game-scale)) 0 0;
+        }
+
+        #start-button {
+            margin-top: calc(30px * var(--game-scale));
+            border: calc(3px * var(--game-scale)) solid #fff;
+            padding: calc(15px * var(--game-scale));
+            display: inline-block;
+            border-radius: calc(10px * var(--game-scale));
+            font-size: calc(1rem * var(--game-scale));
         }
 
         #level-banner {
             position: absolute; width: 100%; top: 40%; text-align: center;
-            font-size: 4.5rem; color: #ffeb3b; text-shadow: 6px 6px 0 #bf360c;
+            font-size: calc(4.5rem * var(--game-scale)); color: #ffeb3b; text-shadow: calc(6px * var(--game-scale)) calc(6px * var(--game-scale)) 0 #bf360c;
             z-index: 500; display: none; pointer-events: none;
-            background: rgba(0,0,0,0.7); padding: 20px 0;
+            background: rgba(0,0,0,0.7); padding: calc(20px * var(--game-scale)) 0;
         }
 
         .battle-field { display: flex; flex-direction: column; height: 100%; }
         .lane { flex: 1; position: relative; width: 100%; display: flex; align-items: center; border-bottom: 2px solid rgba(0,0,0,0.1); }
 
         .plant, .sunflower {
-            width: 120px; height: 120px;
+            width: calc(120px * var(--game-scale)); height: calc(120px * var(--game-scale));
             background-size: contain; background-repeat: no-repeat; background-position: center;
-            z-index: 5; margin-right: 20px; transition: transform 0.2s;
+            z-index: 5; margin-right: calc(20px * var(--game-scale)); transition: transform 0.2s;
         }
 
         .sunflower { 
@@ -60,7 +87,7 @@
         .plant { position: relative; animation: plantBreath 1.2s infinite ease-in-out; }
 
         .zombie-container {
-            position: absolute; left: 1100px; width: 180px; height: 220px;
+            position: absolute; left: calc(1100px * var(--game-scale)); width: calc(180px * var(--game-scale)); height: calc(220px * var(--game-scale));
             z-index: 20; cursor: crosshair; display: flex; justify-content: center; align-items: center;
             transition: transform 0.1s;
         }
@@ -74,11 +101,11 @@
         }
 
         @keyframes zombieWobble { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
-        @keyframes moveLeft { from { left: 1050px; } to { left: 420px; } }
+        @keyframes moveLeft { from { left: calc(1050px * var(--game-scale)); } to { left: calc(420px * var(--game-scale)); } }
         .walking { animation: moveLeft 15s linear forwards; }
 
         #main-bullet {
-            position: absolute; width: 45px; height: 45px;
+            position: absolute; width: calc(45px * var(--game-scale)); height: calc(45px * var(--game-scale));
             background: radial-gradient(circle at 35% 35%, #fff 5%, var(--super-bullet-color) 40%, #4a7c00 90%);
             border-radius: 50%; box-shadow: 0 0 30px var(--super-bullet-color);
             z-index: 100; display: none; pointer-events: none;
@@ -86,13 +113,20 @@
 
         #point-display {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #fff; color: #222; padding: 50px; border-radius: 30px;
-            font-size: 2.2rem; font-weight: bold; border: 10px solid #4caf50;
+            background: #fff; color: #222; padding: calc(50px * var(--game-scale)); border-radius: calc(30px * var(--game-scale));
+            font-size: calc(2.2rem * var(--game-scale)); font-weight: bold; border: calc(10px * var(--game-scale)) solid #4caf50;
             box-shadow: 0 0 0 1000px rgba(0,0,0,0.85);
             display: none; z-index: 2000; text-align: center; width: 80%; cursor: pointer;
+            box-sizing: border-box;
         }
 
-        .defense-line { display: flex; margin-left: 30px; align-items: center; }
+        #point-display .hint {
+            font-size: calc(1.2rem * var(--game-scale));
+            color: #666;
+            margin-top: calc(30px * var(--game-scale));
+        }
+
+        .defense-line { display: flex; margin-left: calc(30px * var(--game-scale)); align-items: center; }
     </style>
 </head>
 <body>
@@ -103,17 +137,16 @@
 <audio id="audio-point" src="point.mp3"></audio>
 <audio id="audio-nextlevel" src="nextlevel.mp3"></audio>
 
-<div id="start-screen" onclick="startGame()">
-    <h1 style="font-size: 3.5rem; color: #cddc39; margin: 0;">PLANTS VS ZOMBIES</h1>
-    <p style="font-size: 1.5rem; color: #ffeb3b;">5.2.6: Membentangkan Produk Elektromekanikal Yang Dihasilkan!</p>
-    <div style="margin-top: 30px; border: 3px solid #fff; padding: 15px; display: inline-block; border-radius: 10px;">MULA PERMAINAN</div>
-</div>
-
 <div id="game-container">
+    <div id="start-screen" onclick="startGame()">
+        <h1>PLANTS VS ZOMBIES</h1>
+        <p>5.2.6: Membentangkan Produk Elektromekanikal Yang Dihasilkan!</p>
+        <div id="start-button">MULA PERMAINAN</div>
+    </div>
     <div id="level-banner">LEVEL 1</div>
     <div id="point-display" onclick="dismissPoint()">
         <div id="point-text"></div>
-        <div style="font-size: 1.2rem; color: #666; margin-top: 30px;">(Klik mana-mana untuk sambung)</div>
+        <div class="hint">(Klik mana-mana untuk sambung)</div>
     </div>
     <div id="main-bullet"></div>
     <div class="battle-field">
@@ -131,12 +164,27 @@
     ];
 
     let currentRound = 0, killedInRound = 0, isPaused = false;
+    let currentScale = 1;
 
     const sndBgm = document.getElementById('audio-bgm');
     const sndClick = document.getElementById('audio-click');
     const sndShoot = document.getElementById('audio-shoot');
     const sndPoint = document.getElementById('audio-point');
     const sndNextLevel = document.getElementById('audio-nextlevel');
+    const gameContainer = document.getElementById('game-container');
+
+    function resizeGame() {
+        const baseWidth = 1100;
+        const baseHeight = 650;
+        const viewportWidth = window.innerWidth - 32;
+        const viewportHeight = window.innerHeight - 32;
+        const scale = Math.min(viewportWidth / baseWidth, viewportHeight / baseHeight, 1);
+
+        currentScale = scale > 0 ? scale : 1;
+        gameContainer.style.width = (baseWidth * currentScale) + 'px';
+        gameContainer.style.height = (baseHeight * currentScale) + 'px';
+        gameContainer.style.setProperty('--game-scale', currentScale);
+    }
 
     function assignPlantSkins() {
         document.querySelectorAll('.plant').forEach(p => {
@@ -151,7 +199,6 @@
         setTimeout(() => {
             sndBgm.play();
             document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('game-container').style.display = 'block';
             assignPlantSkins();
             startLevel();
         }, 100);
@@ -185,7 +232,7 @@
             container.appendChild(body);
             const laneId = index % 3;
             document.getElementById('lane-' + laneId).appendChild(container);
-            container.style.left = (1050 + (index * 140)) + "px";
+            container.style.left = ((1050 + (index * 140)) * currentScale) + "px";
             container.onclick = (e) => {
                 e.stopPropagation();
                 if (!isPaused) shootZombie(container, text);
@@ -204,8 +251,8 @@
         
         bullet.style.display = 'block';
         bullet.animate([
-            { top: (sRect.top - cRect.top + 40) + 'px', left: (sRect.left - cRect.left + 60) + 'px', transform: 'scale(0.5)' },
-            { top: (zRect.top - cRect.top + 80) + 'px', left: (zRect.left - cRect.left + 80) + 'px', transform: 'scale(1.2)' }
+            { top: (sRect.top - cRect.top + (40 * currentScale)) + 'px', left: (sRect.left - cRect.left + (60 * currentScale)) + 'px', transform: 'scale(0.5)' },
+            { top: (zRect.top - cRect.top + (80 * currentScale)) + 'px', left: (zRect.left - cRect.left + (80 * currentScale)) + 'px', transform: 'scale(1.2)' }
         ], { duration: 300, easing: 'ease-out' }).onfinish = () => {
             bullet.style.display = 'none';
             zombieContainer.style.opacity = '0';
@@ -242,6 +289,9 @@
     }
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    resizeGame();
+    window.addEventListener('resize', resizeGame);
 </script>
 
 </body>
