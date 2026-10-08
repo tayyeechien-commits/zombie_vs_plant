@@ -82,6 +82,16 @@
             box-shadow: 0 0 calc(22px * var(--game-scale)) rgba(205, 220, 57, 0.45);
         }
 
+        #start-screen.loading {
+            cursor: wait;
+        }
+
+        #start-button.loading {
+            opacity: 0.76;
+            cursor: wait;
+            background: rgba(255, 235, 59, 0.18);
+        }
+
         #start-screen:hover #start-button {
             background: rgba(139, 195, 74, 0.38);
             transform: scale(1.06);
@@ -488,17 +498,17 @@
 <audio id="audio-nextlevel" src="nextlevel.mp3"></audio>
 
 <div id="game-container">
-    <div id="start-screen" onclick="startGame()">
+    <div id="start-screen" class="loading" onclick="startGame()">
         <h1>PLANT VS ZOMBIE</h1>
         <p>9.1.3: Menerangkan makna lambang pada Jata Negara.</p>
         <p>K 9.1.6: Menjelaskan kepentingan menghayati dan mengamalkan cogan kata Jata Negara.</p>
-        <div id="start-button">MULA BELAJAR</div>
+        <div id="start-button" class="loading">LOADING... 0%</div>
     </div>
     <div id="level-banner">LEVEL 1</div>
     <div id="point-display" onclick="dismissPoint()">
         <div class="point-layout">
             <div class="point-copy">
-                <div class="point-label"><span id="point-badge">Zombie</span><span>Knowledge Point</span></div>
+                <div class="point-label"><span id="point-badge">Zombie</span><span>Makna Lambang</span></div>
                 <div id="point-title"></div>
                 <ul id="point-list"></ul>
                 <div class="importance-section" id="importance-section">
@@ -621,6 +631,10 @@
         }
     };
 
+    const imageCache = new Map();
+    const resolvedAssetCache = new Map();
+    let assetsReady = false;
+
     let currentRound = 0, killedInRound = 0, isPaused = false;
     let shouldResumeBgmAfterPoint = false;
     let currentScale = 1;
@@ -653,17 +667,81 @@
         requestAnimationFrame(resizeGame);
     }
 
-    function setBackgroundWithFallback(element, candidates) {
-        let index = 0;
-        const tryNext = () => {
-            if (index >= candidates.length) return;
-            const src = candidates[index++];
+    function loadImage(src) {
+        if (imageCache.has(src)) {
+            return imageCache.get(src);
+        }
+
+        const promise = new Promise((resolve, reject) => {
             const test = new Image();
-            test.onload = () => element.style.backgroundImage = `url('${src}')`;
-            test.onerror = tryNext;
+            test.onload = () => resolve(src);
+            test.onerror = reject;
             test.src = src;
+        });
+
+        imageCache.set(src, promise);
+        return promise;
+    }
+
+    function resolveAsset(candidates) {
+        const key = candidates.join('|');
+        if (resolvedAssetCache.has(key)) {
+            return resolvedAssetCache.get(key);
+        }
+
+        const promise = new Promise(resolve => {
+            let index = 0;
+            const tryNext = () => {
+                if (index >= candidates.length) {
+                    resolve(null);
+                    return;
+                }
+
+                const src = candidates[index++];
+                loadImage(src).then(resolve).catch(tryNext);
+            };
+            tryNext();
+        });
+
+        resolvedAssetCache.set(key, promise);
+        return promise;
+    }
+
+    async function preloadAssets() {
+        const startScreen = document.getElementById('start-screen');
+        const startButton = document.getElementById('start-button');
+        const groups = [
+            ["sunflower.gif", "sunflower.png"],
+            ...Object.values(assetCandidates.plants),
+            ...Object.values(assetCandidates.zombies)
+        ];
+
+        content.forEach(round => {
+            round.zombies.forEach(item => groups.push([item.photo]));
+        });
+
+        let loadedCount = 0;
+        const updateLoadingText = () => {
+            const percent = Math.round((loadedCount / groups.length) * 100);
+            startButton.innerText = `LOADING... ${percent}%`;
         };
-        tryNext();
+
+        updateLoadingText();
+        await Promise.all(groups.map(candidates => resolveAsset(candidates).finally(() => {
+            loadedCount++;
+            updateLoadingText();
+        })));
+
+        assetsReady = true;
+        startScreen.classList.remove('loading');
+        startButton.classList.remove('loading');
+        startButton.innerText = 'MULA BELAJAR';
+    }
+
+    function setBackgroundWithFallback(element, candidates) {
+        resolveAsset(candidates).then(src => {
+            if (src) element.style.backgroundImage = `url('${src}')`;
+        });
     }
 
     function assignPlantSkins() {
@@ -678,6 +756,8 @@
     }
 
     function startGame() {
+        if (!assetsReady) return;
+
         sndClick.currentTime = 0;
         sndClick.play();
         
@@ -835,6 +915,7 @@
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     resizeGame();
+    preloadAssets();
     window.addEventListener('resize', scheduleResize);
     window.addEventListener('orientationchange', () => setTimeout(resizeGame, 250));
     if (window.visualViewport) {
