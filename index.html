@@ -2,8 +2,8 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PvZ RBT: Smooth Gameplay Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Plant vs Zombie: Jata Negara</title>
     <style>
         :root {
             --pvz-green-1: #45a049;
@@ -13,12 +13,23 @@
             --game-scale: 1;
         }
 
+        html {
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+        }
+
         body {
-            margin: 0; padding: 16px; background: #1a1a1a;
+            margin: 0; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: #1a1a1a;
             font-family: var(--font-main);
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh; min-height: 100dvh; overflow: hidden;
             box-sizing: border-box;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: none;
         }
 
         #game-container {
@@ -28,6 +39,8 @@
             position: relative; box-shadow: 0 0 100px rgba(0,0,0,0.8);
             overflow: hidden;
             box-sizing: border-box;
+            flex: 0 0 auto;
+            touch-action: manipulation;
         }
 
         #start-screen {
@@ -49,6 +62,12 @@
             font-size: calc(1.5rem * var(--game-scale));
             color: #ffeb3b;
             margin: calc(24px * var(--game-scale)) 0 0;
+            animation: objectiveFloat 3.2s ease-in-out infinite;
+            text-shadow: 0 0 calc(10px * var(--game-scale)) rgba(255, 235, 59, 0.38);
+        }
+
+        #start-screen p:nth-of-type(2) {
+            animation-delay: 0.45s;
         }
 
         #start-button {
@@ -58,6 +77,27 @@
             display: inline-block;
             border-radius: calc(10px * var(--game-scale));
             font-size: calc(1rem * var(--game-scale));
+            background: rgba(76, 175, 80, 0.2);
+            animation: buttonWiggle 1.8s ease-in-out infinite;
+            box-shadow: 0 0 calc(22px * var(--game-scale)) rgba(205, 220, 57, 0.45);
+        }
+
+        #start-screen:hover #start-button {
+            background: rgba(139, 195, 74, 0.38);
+            transform: scale(1.06);
+        }
+
+        @keyframes objectiveFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(calc(-4px * var(--game-scale))) rotate(-0.45deg); }
+        }
+
+        @keyframes buttonWiggle {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            20% { transform: rotate(-1.4deg) scale(1.03); }
+            40% { transform: rotate(1.4deg) scale(1.04); }
+            60% { transform: rotate(-0.8deg) scale(1.03); }
+            80% { transform: rotate(0.8deg) scale(1.02); }
         }
 
         #level-banner {
@@ -71,9 +111,9 @@
         .lane { flex: 1; position: relative; width: 100%; display: flex; align-items: center; border-bottom: 2px solid rgba(0,0,0,0.1); }
 
         .plant, .sunflower {
-            width: calc(120px * var(--game-scale)); height: calc(120px * var(--game-scale));
+            width: calc(148px * var(--game-scale)); height: calc(148px * var(--game-scale));
             background-size: contain; background-repeat: no-repeat; background-position: center;
-            z-index: 5; margin-right: calc(20px * var(--game-scale)); transition: transform 0.2s;
+            z-index: 5; margin-right: calc(14px * var(--game-scale)); transition: transform 0.2s;
         }
 
         .sunflower { 
@@ -87,25 +127,51 @@
         .plant { position: relative; animation: plantBreath 1.2s infinite ease-in-out; }
 
         .zombie-container {
-            position: absolute; left: calc(1100px * var(--game-scale)); width: calc(180px * var(--game-scale)); height: calc(220px * var(--game-scale));
+            position: absolute;
+            --zombie-start: calc(810px * var(--game-scale));
+            --zombie-end: calc(430px * var(--game-scale));
+            left: var(--zombie-start);
+            top: var(--zombie-top, 50%);
+            bottom: var(--zombie-bottom, auto);
+            width: calc(250px * var(--game-scale));
+            height: calc(305px * var(--game-scale));
             z-index: 20; cursor: crosshair; display: flex; justify-content: center; align-items: center;
+            transform: translateY(var(--zombie-shift, -50%));
             transition: transform 0.1s;
         }
 
-        .zombie-container:hover { transform: scale(1.05); }
+        #lane-0 .zombie-container {
+            --zombie-top: calc(2px * var(--game-scale));
+            --zombie-shift: 0;
+        }
+
+        #lane-2 .zombie-container {
+            --zombie-top: auto;
+            --zombie-bottom: calc(2px * var(--game-scale));
+            --zombie-shift: 0;
+        }
+
+        .zombie-container:hover {
+            transform: translateY(var(--zombie-shift, -50%)) scale(1.04);
+        }
 
         .zombie-body {
+            --zombie-visual-scale: 1.22;
             width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat;
             background-position: center bottom; animation: zombieWobble 2.5s infinite ease-in-out;
+            transform-origin: center bottom;
             filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.3));
         }
 
-        @keyframes zombieWobble { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
-        @keyframes moveLeft { from { left: calc(1050px * var(--game-scale)); } to { left: calc(420px * var(--game-scale)); } }
+        @keyframes zombieWobble {
+            0%, 100% { transform: scale(var(--zombie-visual-scale)) rotate(-3deg); }
+            50% { transform: scale(var(--zombie-visual-scale)) rotate(3deg); }
+        }
+        @keyframes moveLeft { from { left: var(--zombie-start); } to { left: var(--zombie-end); } }
         .walking { animation: moveLeft 15s linear forwards; }
 
         #main-bullet {
-            position: absolute; width: calc(45px * var(--game-scale)); height: calc(45px * var(--game-scale));
+            position: absolute; width: calc(52px * var(--game-scale)); height: calc(52px * var(--game-scale));
             background: radial-gradient(circle at 35% 35%, #fff 5%, var(--super-bullet-color) 40%, #4a7c00 90%);
             border-radius: 50%; box-shadow: 0 0 30px var(--super-bullet-color);
             z-index: 100; display: none; pointer-events: none;
@@ -113,20 +179,304 @@
 
         #point-display {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #fff; color: #222; padding: calc(50px * var(--game-scale)); border-radius: calc(30px * var(--game-scale));
-            font-size: calc(2.2rem * var(--game-scale)); font-weight: bold; border: calc(10px * var(--game-scale)) solid #4caf50;
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.85);
-            display: none; z-index: 2000; text-align: center; width: 80%; cursor: pointer;
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 245, 157, 0.9)),
+                repeating-conic-gradient(#f7e9a0 0% 25%, #fff7c8 0% 50%) 50% / calc(60px * var(--game-scale)) calc(60px * var(--game-scale));
+            color: #222; padding: calc(28px * var(--game-scale)); border-radius: calc(30px * var(--game-scale));
+            font-size: calc(1.25rem * var(--game-scale)); font-weight: bold; border: calc(10px * var(--game-scale)) solid #2e7d32;
+            box-shadow:
+                0 0 0 1000px rgba(0,0,0,0.85),
+                inset 0 0 0 calc(5px * var(--game-scale)) #8bc34a,
+                0 calc(14px * var(--game-scale)) calc(28px * var(--game-scale)) rgba(0,0,0,0.38);
+            display: none; z-index: 2000; text-align: left; width: 88%; min-height: calc(360px * var(--game-scale)); max-height: calc(590px * var(--game-scale)); overflow: auto; cursor: pointer;
             box-sizing: border-box;
         }
 
-        #point-display .hint {
-            font-size: calc(1.2rem * var(--game-scale));
-            color: #666;
-            margin-top: calc(30px * var(--game-scale));
+        .point-layout {
+            display: grid;
+            grid-template-columns: 1fr calc(255px * var(--game-scale));
+            gap: calc(24px * var(--game-scale));
+            align-items: start;
         }
 
-        .defense-line { display: flex; margin-left: calc(30px * var(--game-scale)); align-items: center; }
+        .point-copy {
+            min-height: calc(285px * var(--game-scale));
+            background: rgba(255,255,255,0.76);
+            border: calc(4px * var(--game-scale)) solid rgba(76, 175, 80, 0.55);
+            border-radius: calc(22px * var(--game-scale));
+            padding: calc(22px * var(--game-scale));
+            box-shadow: inset 0 calc(-5px * var(--game-scale)) 0 rgba(46,125,50,0.14);
+        }
+
+        .point-label {
+            display: inline-flex;
+            align-items: center;
+            gap: calc(8px * var(--game-scale));
+            margin-bottom: calc(12px * var(--game-scale));
+            padding: calc(7px * var(--game-scale)) calc(12px * var(--game-scale));
+            border-radius: calc(999px * var(--game-scale));
+            background: #2e7d32;
+            color: #fffde7;
+            font-size: calc(0.78rem * var(--game-scale));
+            line-height: 1;
+            box-shadow: 0 calc(4px * var(--game-scale)) 0 #1b5e20;
+            text-transform: uppercase;
+        }
+
+        #point-badge {
+            color: #ffeb3b;
+        }
+
+        #point-title {
+            color: #1b5e20;
+            font-size: calc(1.85rem * var(--game-scale));
+            line-height: 1.1;
+            margin-bottom: calc(18px * var(--game-scale));
+            padding-bottom: calc(10px * var(--game-scale));
+            border-bottom: calc(4px * var(--game-scale)) solid rgba(139, 195, 74, 0.55);
+            text-shadow: calc(2px * var(--game-scale)) calc(2px * var(--game-scale)) 0 #dce775;
+        }
+
+        #point-list {
+            margin: 0;
+            padding: 0;
+            line-height: 1.32;
+            list-style: none;
+            counter-reset: point-item;
+            display: grid;
+            gap: calc(10px * var(--game-scale));
+        }
+
+        #point-list li {
+            counter-increment: point-item;
+            display: grid;
+            grid-template-columns: calc(38px * var(--game-scale)) 1fr;
+            gap: calc(12px * var(--game-scale));
+            align-items: start;
+            margin: 0;
+            padding: calc(12px * var(--game-scale)) calc(14px * var(--game-scale));
+            background: rgba(255,255,255,0.94);
+            border-left: calc(8px * var(--game-scale)) solid #8bc34a;
+            border-radius: calc(14px * var(--game-scale));
+            box-shadow: 0 calc(4px * var(--game-scale)) calc(8px * var(--game-scale)) rgba(0,0,0,0.12);
+        }
+
+        #point-list li::before {
+            content: counter(point-item);
+            width: calc(32px * var(--game-scale));
+            height: calc(32px * var(--game-scale));
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #ffeb3b;
+            color: #bf360c;
+            box-shadow: 0 calc(3px * var(--game-scale)) 0 #f57f17;
+            font-size: calc(1rem * var(--game-scale));
+        }
+
+        .importance-section {
+            display: none;
+            margin-top: calc(18px * var(--game-scale));
+            padding: calc(16px * var(--game-scale));
+            border: calc(4px * var(--game-scale)) solid #2e7d32;
+            border-radius: calc(18px * var(--game-scale));
+            background: linear-gradient(135deg, rgba(232, 245, 233, 0.95), rgba(255, 253, 231, 0.95));
+            box-shadow: inset 0 calc(-4px * var(--game-scale)) 0 rgba(46, 125, 50, 0.16);
+        }
+
+        .importance-section.active {
+            display: block;
+        }
+
+        #importance-title {
+            margin-bottom: calc(12px * var(--game-scale));
+            color: #1b5e20;
+            font-size: calc(1.25rem * var(--game-scale));
+            line-height: 1.2;
+            text-align: center;
+        }
+
+        #importance-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            counter-reset: importance-item;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: calc(10px * var(--game-scale));
+        }
+
+        #importance-list li {
+            counter-increment: importance-item;
+            min-height: calc(82px * var(--game-scale));
+            display: grid;
+            place-items: center;
+            gap: calc(6px * var(--game-scale));
+            padding: calc(10px * var(--game-scale));
+            border-radius: calc(14px * var(--game-scale));
+            background: #fffde7;
+            border: calc(3px * var(--game-scale)) solid #cddc39;
+            color: #33691e;
+            text-align: center;
+            box-shadow: 0 calc(4px * var(--game-scale)) calc(8px * var(--game-scale)) rgba(0,0,0,0.13);
+        }
+
+        #importance-list li::before {
+            content: counter(importance-item);
+            width: calc(34px * var(--game-scale));
+            height: calc(34px * var(--game-scale));
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #2e7d32;
+            color: #ffeb3b;
+            box-shadow: 0 calc(3px * var(--game-scale)) 0 #1b5e20;
+        }
+
+        .point-photo {
+            position: relative;
+            min-height: calc(238px * var(--game-scale));
+            border: calc(6px * var(--game-scale)) solid #2e7d32;
+            border-radius: calc(18px * var(--game-scale));
+            background:
+                linear-gradient(rgba(255,255,255,0.82), rgba(255,255,255,0.82)),
+                repeating-conic-gradient(var(--pvz-green-1) 0% 25%, var(--pvz-green-2) 0% 50%) 50% / calc(50px * var(--game-scale)) calc(50px * var(--game-scale));
+            box-shadow:
+                inset 0 0 calc(18px * var(--game-scale)) rgba(0,0,0,0.18),
+                0 calc(7px * var(--game-scale)) calc(12px * var(--game-scale)) rgba(0,0,0,0.18);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #2e7d32;
+            font-size: calc(1rem * var(--game-scale));
+            padding: calc(12px * var(--game-scale));
+        }
+
+        .point-photo::before {
+            content: "GAMBAR";
+            position: absolute;
+            top: calc(10px * var(--game-scale));
+            right: calc(10px * var(--game-scale));
+            z-index: 3;
+            padding: calc(5px * var(--game-scale)) calc(9px * var(--game-scale));
+            border-radius: calc(999px * var(--game-scale));
+            background: rgba(27, 94, 32, 0.88);
+            color: #fffde7;
+            font-size: calc(0.72rem * var(--game-scale));
+        }
+
+        #point-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #fff;
+            display: none;
+        }
+
+        .point-photo.has-image #point-image {
+            display: block;
+        }
+
+        .point-photo.has-image #photo-placeholder {
+            display: none;
+        }
+
+        #photo-placeholder {
+            padding: calc(18px * var(--game-scale));
+            border: calc(3px * var(--game-scale)) dashed rgba(46,125,50,0.6);
+            border-radius: calc(14px * var(--game-scale));
+            background: rgba(255,255,255,0.72);
+            line-height: 1.35;
+        }
+
+        #point-display .hint {
+            font-size: calc(1.05rem * var(--game-scale));
+            color: #3e5d22;
+            margin-top: calc(18px * var(--game-scale));
+            text-align: center;
+            background: rgba(255,255,255,0.62);
+            border-radius: calc(999px * var(--game-scale));
+            padding: calc(8px * var(--game-scale)) calc(14px * var(--game-scale));
+        }
+
+        #mission-complete {
+            position: absolute;
+            inset: 0;
+            z-index: 3200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background:
+                radial-gradient(circle at 50% 35%, rgba(255, 235, 59, 0.3), transparent 32%),
+                rgba(0,0,0,0.86);
+            cursor: pointer;
+        }
+
+        #mission-complete.active {
+            display: flex;
+        }
+
+        .complete-card {
+            width: 78%;
+            padding: calc(48px * var(--game-scale));
+            border: calc(9px * var(--game-scale)) solid #8bc34a;
+            border-radius: calc(32px * var(--game-scale));
+            background:
+                linear-gradient(rgba(255,255,255,0.84), rgba(255,253,231,0.94)),
+                repeating-conic-gradient(var(--pvz-green-1) 0% 25%, var(--pvz-green-2) 0% 50%) 50% / calc(70px * var(--game-scale)) calc(70px * var(--game-scale));
+            box-shadow: 0 0 calc(45px * var(--game-scale)) rgba(205, 220, 57, 0.5);
+            animation: completePop 0.7s cubic-bezier(.2,.9,.28,1.28);
+        }
+
+        .complete-card h2 {
+            margin: 0;
+            color: #ffeb3b;
+            font-size: calc(4.2rem * var(--game-scale));
+            line-height: 1;
+            text-shadow: calc(5px * var(--game-scale)) calc(5px * var(--game-scale)) 0 #bf360c;
+        }
+
+        .complete-card p {
+            margin: calc(22px * var(--game-scale)) 0 0;
+            color: #1b5e20;
+            font-size: calc(1.7rem * var(--game-scale));
+        }
+
+        .complete-card .complete-hint {
+            display: inline-block;
+            margin-top: calc(28px * var(--game-scale));
+            padding: calc(10px * var(--game-scale)) calc(18px * var(--game-scale));
+            border-radius: calc(999px * var(--game-scale));
+            background: #2e7d32;
+            color: #fffde7;
+            font-size: calc(1rem * var(--game-scale));
+        }
+
+        @keyframes completePop {
+            from { opacity: 0; transform: scale(0.82) rotate(-1deg); }
+            to { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        .defense-line { display: flex; margin-left: calc(24px * var(--game-scale)); align-items: center; }
+
+        @media (max-width: 760px) {
+            .point-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .point-photo {
+                min-height: calc(150px * var(--game-scale));
+            }
+
+            #importance-list {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -139,13 +489,28 @@
 
 <div id="game-container">
     <div id="start-screen" onclick="startGame()">
-        <h1>PLANTS VS ZOMBIES</h1>
-        <p>5.2.6: Membentangkan Produk Elektromekanikal Yang Dihasilkan!</p>
-        <div id="start-button">MULA PERMAINAN</div>
+        <h1>PLANT VS ZOMBIE</h1>
+        <p>9.1.3: Menerangkan makna lambang pada Jata Negara.</p>
+        <p>K 9.1.6: Menjelaskan kepentingan menghayati dan mengamalkan cogan kata Jata Negara.</p>
+        <div id="start-button">MULA BELAJAR</div>
     </div>
     <div id="level-banner">LEVEL 1</div>
     <div id="point-display" onclick="dismissPoint()">
-        <div id="point-text"></div>
+        <div class="point-layout">
+            <div class="point-copy">
+                <div class="point-label"><span id="point-badge">Zombie</span><span>Knowledge Point</span></div>
+                <div id="point-title"></div>
+                <ul id="point-list"></ul>
+                <div class="importance-section" id="importance-section">
+                    <div id="importance-title"></div>
+                    <ol id="importance-list"></ol>
+                </div>
+            </div>
+            <div class="point-photo" id="point-photo">
+                <span id="photo-placeholder">Letak gambar di sini<br>contoh: point1.png</span>
+                <img id="point-image" alt="Gambar pengetahuan">
+            </div>
+        </div>
         <div class="hint">(Klik mana-mana untuk sambung)</div>
     </div>
     <div id="main-bullet"></div>
@@ -154,16 +519,110 @@
         <div class="lane" id="lane-1"><div class="defense-line"><div class="plant" id="shooter-plant"></div><div class="sunflower"></div><div class="plant"></div></div></div>
         <div class="lane" id="lane-2"><div class="defense-line"><div class="plant"></div><div class="sunflower"></div><div class="plant"></div></div></div>
     </div>
+    <div id="mission-complete" onclick="location.reload()">
+        <div class="complete-card">
+            <h2>Tahniah!</h2>
+            <p>Anda dah selesai misi!</p>
+            <span class="complete-hint">Klik untuk main semula</span>
+        </div>
+    </div>
 </div>
 
 <script>
     const content = [
-        { level: "ROUND 1: Definisi Pembentangan", points: ["Proses berkongsi maklumat tentang projek/produk.", "Untuk menyampaikan idea kepada audiens.", "Mendapatkan maklum balas untuk penambahbaikan.", "Menunjukkan bukti hasil kerja yang telah siap."] },
-        { level: "ROUND 2: Ciri Pembentangan Baik", points: ["Suara yang jelas and lantang.", "Isi ringkas, padat and lengkap.", "Sopan and berkeyakinan tinggi.", "Tepat masa (tidak terlalu lama).", "Penyampaian teratur and kemas.", "Berinteraksi dengan audiens."] },
-        { level: "ROUND 3: Keperluan Pembentangan", points: ["Nama ahli kumpulan & tajuk projek.", "Fungsi produk & komponen utama.", "Alatan & bahan yang digunakan.", "Demonstrasi kefungsian produk.", "Menjelaskan masalah yang dihadapi.", "Sesi soal jawab bersama audiens."] }
+        {
+            level: "ROUND 1: Makna Lambang",
+            zombies: [
+                {
+                    id: 1,
+                    title: "Bintang pecah 14 dan bulan",
+                    photo: "point1.png",
+                    points: [
+                        "Bintang = 13 buah negeri dan Kerajaan Persekutuan.",
+                        "Bulan = Agama Islam."
+                    ]
+                },
+                {
+                    id: 2,
+                    title: "Dua ekor harimau",
+                    photo: "point2.png",
+                    points: [
+                        "Melambangkan keberanian."
+                    ]
+                },
+                {
+                    id: 3,
+                    title: "Lima bilah keris dan empat jalur warna",
+                    photo: "point3.png",
+                    points: [
+                        "Lima bilah keris = Negeri-Negeri Melayu Tidak Bersekutu: Perlis, Kedah, Kelantan, Terengganu dan Johor.",
+                        "Warna merah, hitam, putih dan kuning = Negeri-Negeri Melayu Bersekutu: Perak, Selangor, Pahang dan Negeri Sembilan."
+                    ]
+                }
+            ]
+        },
+        {
+            level: "ROUND 2: Negeri Dalam Jata",
+            zombies: [
+                {
+                    id: 4,
+                    title: "Bunga raya, Jata Sabah dan Sarawak",
+                    photo: "point4.png",
+                    points: [
+                        "Bunga raya = bunga kebangsaan.",
+                        "Jata Sabah dan Sarawak = negeri Sabah dan Sarawak."
+                    ]
+                },
+                {
+                    id: 5,
+                    title: "Pulau Pinang dan Melaka",
+                    photo: "point5.png",
+                    points: [
+                        "Pokok Pinang dan Jambatan di kiri perisai = negeri Pulau Pinang.",
+                        "Pokok Melaka di kanan perisai = negeri Melaka."
+                    ]
+                }
+            ]
+        },
+        {
+            level: "ROUND 3: Cogan Kata",
+            zombies: [
+                {
+                    id: 6,
+                    title: "Cogan kata 'Bersekutu Bertambah Mutu'",
+                    photo: "point6.png",
+                    points: [
+                        "Semangat kerjasama memupuk perpaduan."
+                    ],
+                    importanceTitle: "Kepentingan menghayati dan mengamalkan cogan kata Jata Negara",
+                    importance: [
+                        "Memupuk perpaduan",
+                        "Menggalakkan kerjasama",
+                        "Mewujudkan kehidupan yang aman dan harmoni"
+                    ]
+                }
+            ]
+        }
     ];
 
+    const assetCandidates = {
+        plants: {
+            1: ["plant1.gif", "plant 1.gif", "plant1.png", "plant 1.png"],
+            2: ["plant2.gif", "plant 2.gif", "plant2.png", "plant 2.png"],
+            3: ["plant3.gif", "plant 3.gif", "plant3.png", "plant 3.png"]
+        },
+        zombies: {
+            1: ["zombie1.gif", "zombie 1.gif", "zombie1.png", "zombie 1.png"],
+            2: ["zombie2.gif", "zombie 2.gif", "zombie2.png", "zombie 2.png"],
+            3: ["zombie3.gif", "zombie 3.gif", "zombie3.png", "zombie 3.png"],
+            4: ["zombie4.gif", "zombie 4.gif", "zombie 4(1).gif", "zombie4.png", "zombie 4.png"],
+            5: ["zombie5.gif", "zombie 5.gif", "zombie5.png", "zombie 5.png"],
+            6: ["zombie6.gif", "zombie 6.gif", "zombie6.png", "zombie 6.png"]
+        }
+    };
+
     let currentRound = 0, killedInRound = 0, isPaused = false;
+    let shouldResumeBgmAfterPoint = false;
     let currentScale = 1;
 
     const sndBgm = document.getElementById('audio-bgm');
@@ -176,8 +635,12 @@
     function resizeGame() {
         const baseWidth = 1100;
         const baseHeight = 650;
-        const viewportWidth = window.innerWidth - 32;
-        const viewportHeight = window.innerHeight - 32;
+        const viewport = window.visualViewport;
+        const bodyStyle = getComputedStyle(document.body);
+        const horizontalPadding = parseFloat(bodyStyle.paddingLeft) + parseFloat(bodyStyle.paddingRight);
+        const verticalPadding = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+        const viewportWidth = (viewport ? viewport.width : window.innerWidth) - horizontalPadding;
+        const viewportHeight = (viewport ? viewport.height : window.innerHeight) - verticalPadding;
         const scale = Math.min(viewportWidth / baseWidth, viewportHeight / baseHeight, 1);
 
         currentScale = scale > 0 ? scale : 1;
@@ -186,9 +649,31 @@
         gameContainer.style.setProperty('--game-scale', currentScale);
     }
 
+    function scheduleResize() {
+        requestAnimationFrame(resizeGame);
+    }
+
+    function setBackgroundWithFallback(element, candidates) {
+        let index = 0;
+        const tryNext = () => {
+            if (index >= candidates.length) return;
+            const src = candidates[index++];
+            const test = new Image();
+            test.onload = () => element.style.backgroundImage = `url('${src}')`;
+            test.onerror = tryNext;
+            test.src = src;
+        };
+        tryNext();
+    }
+
     function assignPlantSkins() {
-        document.querySelectorAll('.plant').forEach(p => {
-            p.style.backgroundImage = `url('plant${Math.floor(Math.random() * 3) + 1}.gif')`;
+        document.querySelectorAll('.plant').forEach((p, index) => {
+            if (p.id === 'shooter-plant') {
+                setBackgroundWithFallback(p, assetCandidates.plants[2]);
+                return;
+            }
+            const plantId = index % 2 === 0 ? 1 : 3;
+            setBackgroundWithFallback(p, assetCandidates.plants[plantId]);
         });
     }
 
@@ -206,8 +691,7 @@
 
     async function startLevel() {
         if (currentRound >= content.length) {
-            alert("TAHNIAH! Anda telah tamat pelajaran hari ini!");
-            location.reload();
+            showMissionComplete();
             return;
         }
         const banner = document.getElementById('level-banner');
@@ -221,26 +705,36 @@
 
     function spawnZombies() {
         document.querySelectorAll('.zombie-container').forEach(z => z.remove());
-        const roundPoints = content[currentRound].points;
+        const roundZombies = content[currentRound].zombies;
+        const laneTracks = [
+            { start: 820, end: 650, z: 23 },
+            { start: 900, end: 710, z: 25 },
+            { start: 780, end: 620, z: 24 }
+        ];
         
-        roundPoints.forEach((text, index) => {
+        roundZombies.forEach((item, index) => {
             const container = document.createElement('div');
             container.className = 'zombie-container walking';
             const body = document.createElement('div');
             body.className = 'zombie-body';
-            body.style.backgroundImage = `url('zombie${Math.floor(Math.random() * 6) + 1}.gif')`;
+            setBackgroundWithFallback(body, assetCandidates.zombies[item.id]);
             container.appendChild(body);
             const laneId = index % 3;
+            const track = laneTracks[laneId];
             document.getElementById('lane-' + laneId).appendChild(container);
-            container.style.left = ((1050 + (index * 140)) * currentScale) + "px";
+            container.style.setProperty('--zombie-start', `calc(${track.start}px * var(--game-scale))`);
+            container.style.setProperty('--zombie-end', `calc(${track.end}px * var(--game-scale))`);
+            container.style.zIndex = track.z;
             container.onclick = (e) => {
                 e.stopPropagation();
-                if (!isPaused) shootZombie(container, text);
+                sndClick.currentTime = 0;
+                sndClick.play();
+                if (!isPaused) shootZombie(container, item);
             };
         });
     }
 
-    function shootZombie(zombieContainer, text) {
+    function shootZombie(zombieContainer, item) {
         isPaused = true;
         sndShoot.currentTime = 0; 
         sndShoot.play();
@@ -251,8 +745,16 @@
         
         bullet.style.display = 'block';
         bullet.animate([
-            { top: (sRect.top - cRect.top + (40 * currentScale)) + 'px', left: (sRect.left - cRect.left + (60 * currentScale)) + 'px', transform: 'scale(0.5)' },
-            { top: (zRect.top - cRect.top + (80 * currentScale)) + 'px', left: (zRect.left - cRect.left + (80 * currentScale)) + 'px', transform: 'scale(1.2)' }
+            {
+                top: (sRect.top - cRect.top + (sRect.height * 0.35)) + 'px',
+                left: (sRect.left - cRect.left + (sRect.width * 0.72)) + 'px',
+                transform: 'scale(0.58)'
+            },
+            {
+                top: (zRect.top - cRect.top + (zRect.height * 0.45)) + 'px',
+                left: (zRect.left - cRect.left + (zRect.width * 0.48)) + 'px',
+                transform: 'scale(1.25)'
+            }
         ], { duration: 300, easing: 'ease-out' }).onfinish = () => {
             bullet.style.display = 'none';
             zombieContainer.style.opacity = '0';
@@ -261,23 +763,65 @@
             setTimeout(() => {
                 sndPoint.currentTime = 0;
                 sndPoint.play();
-                showPoint(text);
+                showPoint(item);
             }, 1500);
         };
     }
 
-    function showPoint(text) {
-        document.getElementById('point-text').innerText = text;
+    function showPoint(item) {
+        shouldResumeBgmAfterPoint = !sndBgm.paused;
+        if (shouldResumeBgmAfterPoint) {
+            sndBgm.pause();
+        }
+
+        document.getElementById('point-badge').innerText = `Zombie ${item.id}`;
+        document.getElementById('point-title').innerText = item.title;
+        document.getElementById('point-list').innerHTML = item.points.map(point => `<li>${point}</li>`).join('');
+
+        const importanceSection = document.getElementById('importance-section');
+        const importanceTitle = document.getElementById('importance-title');
+        const importanceList = document.getElementById('importance-list');
+        if (item.importance && item.importance.length) {
+            importanceTitle.innerText = item.importanceTitle || "Kepentingan";
+            importanceList.innerHTML = item.importance.map(point => `<li>${point}</li>`).join('');
+            importanceSection.classList.add('active');
+        } else {
+            importanceTitle.innerText = "";
+            importanceList.innerHTML = "";
+            importanceSection.classList.remove('active');
+        }
+
+        const pointPhoto = document.getElementById('point-photo');
+        const pointImage = document.getElementById('point-image');
+        const placeholder = document.getElementById('photo-placeholder');
+        pointPhoto.classList.remove('has-image');
+        placeholder.innerHTML = `Letak gambar di sini<br>${item.photo}`;
+        pointImage.removeAttribute('src');
+        pointImage.onload = () => pointPhoto.classList.add('has-image');
+        pointImage.onerror = () => pointPhoto.classList.remove('has-image');
+        pointImage.src = item.photo;
+
         document.getElementById('point-display').style.display = 'block';
+    }
+
+    function showMissionComplete() {
+        document.querySelectorAll('.zombie-container').forEach(z => z.remove());
+        sndBgm.pause();
+        document.getElementById('mission-complete').classList.add('active');
     }
 
     function dismissPoint() {
         document.getElementById('point-display').style.display = 'none';
         isPaused = false;
         document.querySelectorAll('.zombie-container').forEach(el => el.style.animationPlayState = 'running');
+
+        if (shouldResumeBgmAfterPoint) {
+            sndBgm.play().catch(() => {});
+            shouldResumeBgmAfterPoint = false;
+        }
         
         killedInRound++;
-        if (killedInRound >= content[currentRound].points.length) {
+        if (killedInRound >= content[currentRound].zombies.length) {
             currentRound++;
             // 在进入下一关前播放 Next Level 音效
             if (currentRound < content.length) {
@@ -291,7 +835,12 @@
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     resizeGame();
-    window.addEventListener('resize', resizeGame);
+    window.addEventListener('resize', scheduleResize);
+    window.addEventListener('orientationchange', () => setTimeout(resizeGame, 250));
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', scheduleResize);
+        window.visualViewport.addEventListener('scroll', scheduleResize);
+    }
 </script>
 
 </body>
